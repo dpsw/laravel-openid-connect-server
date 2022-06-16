@@ -22,10 +22,20 @@ class RouteRegistrar extends LaravelRouteRegistrar
                 'uses' => '\Idaas\Passport\Http\Controllers\AuthorizationController@authorize',
             ])->name('oauth.authorize');
 
+            $router->post('/authorize', [
+                'uses' => '\Idaas\Passport\Http\Controllers\AuthorizationController@approve',
+                'as' => 'passport.authorizations.approve',
+            ]);
 
             $router->get('/logout', [
                 'uses' => '\Idaas\Passport\SessionManagementController@logout',
             ])->name('oidc.logout');
+
+
+            $router->delete('/authorize', [
+                'uses' => '\Idaas\Passport\SessionManagementController@deny',
+                'as' => 'passport.authorizations.deny',
+            ]);
         });
     }
 
