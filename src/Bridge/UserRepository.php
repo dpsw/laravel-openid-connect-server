@@ -19,9 +19,32 @@ class UserRepository extends LaravelUserRepository implements UserRepositoryInte
      */
     public function getAttributes(UserEntityInterface $user, $claims, $scopes)
     {
-        return [
-            'sub' => $user->getIdentifier()
+        $model = $this->getUserModel();
+        $attributes = [
+            'sub' => $user->getIdentifier(),
         ];
+
+        $userEntity = (new $model)->findForPassport($user->getIdentifier());
+
+        if (method_exists($userEntity, 'getPublicAttributes')) {
+            $attributes = array_merge_recursive(
+                $attributes,
+                $userEntity->getPublicAttributes(),
+            );
+        }
+
+        return $attributes;
+    }
+
+    private function getUserModel()
+    {
+        $provider = config('auth.guards.api.provider');
+
+        if (is_null($model = config('auth.providers.' . $provider . '.model'))) {
+            throw new RuntimeException('Unable to determine authentication model from configuration.');
+        }
+
+        return $model;
     }
 
     public function getUserInfoAttributes(UserEntityInterface $user, $claims, $scopes)
@@ -31,11 +54,7 @@ class UserRepository extends LaravelUserRepository implements UserRepositoryInte
 
     public function getUserByIdentifier($identifier) : ?UserEntityInterface
     {
-        $provider = config('auth.guards.api.provider');
-
-        if (is_null($model = config('auth.providers.' . $provider . '.model'))) {
-            throw new RuntimeException('Unable to determine authentication model from configuration.');
-        }
+        $model = $this->getUserModel();
 
         if (method_exists($model, 'findForPassport')) {
             $user = (new $model)->findForPassport($identifier);
